@@ -1,0 +1,221 @@
+---
+title: "Flexdashboard Experiments"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+
+---
+# Information Panel
+
+**Data Set name:** msleep  
+**Author:** Mert Yavuz  
+**ID number:** 210527021  
+**Date:** 10:48PM Tuesday, May 28, 2024 
+
+---
+
+
+```{r setup, include=FALSE}
+
+
+library(flexdashboard)
+library(rio)
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(knitr)
+data(msleep)
+
+saveRDS(msleep, "msleep.rds")
+
+msleep <- import("msleep.rds")
+
+head(msleep)
+
+```
+
+# Msleep Data Exploration
+
+### Variable Names
+```{r}
+names(msleep)
+```
+
+Column {data-width=650 .tabset}
+-----------------------------------------------------------------------
+
+### Histogram of Total Sleep Time
+
+This code creates an interactive histogram visualizing the distribution of total sleep time in the msleep data, after filtering out rows with missing "vore" values.
+
+```{r}
+p1 <- msleep %>%
+  filter(!is.na(vore)) %>%
+  ggplot(aes(x = sleep_total)) + 
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  labs(title = "Total Sleep Time Distribution",
+       x = "Total Sleep Time (hours)",
+       y = "Count") +
+  theme_minimal()
+ggplotly(p1)
+
+
+```
+
+
+### Total Sleep Time by Feeding Type
+
+This code creates an interactive stacked histogram showing the distribution of total sleep time for each feeding type ("vore" category) in the msleep data, after excluding rows with missing "vore" values.
+
+```{r, warning= F, message=F}
+
+p2 <- msleep %>%
+  filter(!is.na(vore)) %>%
+  ggplot(aes(x = sleep_total, fill = vore)) + 
+  geom_histogram(binwidth = 1, position = "dodge") +
+  labs(title = "Total Sleep Time Distribution by Feeding Type",
+       x = "Total Sleep Time (hours)",
+       y = "Count") +
+  theme_minimal()
+ggplotly(p2)
+
+
+
+```
+
+
+Column {data-width=350 .tabset}
+-----------------------------------------------------------------------
+
+### Average Total Sleep Time by Feeding Type
+
+This code calculates the average total sleep time for each feeding type in the msleep data and creates an interactive bar chart visualizing these averages.
+
+```{r message=FALSE, warning=FALSE}
+avg_sleep <- msleep %>%
+  filter(!is.na(vore)) %>%   
+  group_by(vore) %>%
+  summarise(mean_sleep = mean(sleep_total, na.rm = TRUE))
+
+p3 <- ggplot(avg_sleep, aes(x = vore, y = mean_sleep)) +
+  geom_col(fill = "steelblue") +
+  labs(title = "Average Total Sleep Time by Feeding Type",
+       x = "Feeding Type",
+       y = "Average Total Sleep Time (hours)") +
+  theme_minimal()
+
+ggplotly(p3)
+
+
+```
+
+### Histogram of Sleep Cycles
+
+This code creates an interactive histogram showing the distribution of sleep cycle lengths in the "msleep" data, after filtering out entries with missing feeding type information.
+
+```{r message=FALSE, warning=FALSE}
+
+p4 <- msleep %>% 
+  filter(!is.na(vore)) 
+p4 <- ggplot(p4, aes(x = sleep_cycle)) +  
+  geom_histogram(binwidth = 0.5, fill = "steelblue", color = "white") +
+  labs(title = "Histogram of Sleep Cycles",
+       x = "Sleep Cycle Duration (hours)",
+       y = "Count") +
+  theme_minimal() 
+
+ggplotly(p4) 
+
+
+
+```
+
+### Box Plot of Total Sleep Time by Feeding Type
+
+This code creates a box plot showing animals' total sleep time by feeding type using the msleep dataset, then converts it into an interactive version with ggplotly.
+
+```{r}
+p5 <- msleep %>%
+  filter(!is.na(vore)) %>%
+  ggplot(aes(x = vore, y = sleep_total)) +
+  geom_boxplot() +
+  labs(title = "Total Sleep Time by Feeding Type",
+       x = "Feeding Type",
+       y = "Total Sleep Time (hours)") +
+  theme_minimal()
+
+ggplotly(p5)
+```
+
+### Scatterplot of Total Sleep Time vs REM Sleep Time
+
+This code plots a scatterplot of animals' total sleep time against their REM sleep time using the `msleep` dataset, then makes it interactive with `ggplotly`.
+
+```{r}
+p6 <- ggplot(msleep, aes(x = sleep_total, y = sleep_rem)) +
+  geom_point() +
+  labs(title = "Total Sleep Time vs REM Sleep Time",
+       x = "Total Sleep Time (hours)",
+       y = "REM Sleep Time (hours)") +
+  theme_minimal()
+
+ggplotly(p6)
+```
+
+
+### Summary of Sleep Data
+
+This code generates a summary table of sleep characteristics for each feeding type in the msleep data, excluding rows with missing values and entries with "NA" as feeding type.
+
+```{r}
+
+sleep_summary <- msleep %>%
+  filter(!is.na(vore) & !is.na(sleep_total) & !is.na(sleep_rem) & !is.na(sleep_cycle) & !is.na(awake)) %>%
+  filter(vore != "NA") %>%
+  group_by(vore) %>%
+  select(sleep_total, sleep_rem, sleep_cycle, awake) %>%
+  summary()
+
+kable(sleep_summary)
+
+
+```
+
+# Average Sleep Time by Genus
+
+This code calculates the average total sleep time for each genus in the msleep data,sorts them by descending average sleep time, and creates a formatted table with a caption summarizing the content.
+
+```{r}
+genus_sleep_avg <- msleep %>%
+  group_by(genus) %>%
+  summarise(avg_sleep = mean(sleep_total, na.rm = TRUE)) %>%
+  arrange(desc(avg_sleep)) 
+
+kable(genus_sleep_avg, caption = "Average Sleep Time by Genus")
+```
+
+
+### References
+
+1-Wickham, H. (2014). Tidy data. Journal of Statistical Software, 59(10), 1-23. https://doi.org/10.18637/jss.v059.i10
+
+2-Wickham, H. (2016). ggplot2: Elegant graphics for data analysis. Springer-Verlag. https://ggplot2.tidyverse.org
+
+3-Wickham, H., Averick, M., Bryan, J., Chang, W., McGowan, L. D., François, R., ... & Yutani, H. (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686. https://doi.org/10.21105/joss.01686
+
+4-Chang, W. (2018). R graphics cookbook: Practical recipes for visualizing data. O'Reilly Media, Inc. https://r-graphics.org
+
+5-Iannone, R. (2020). flexdashboard: R Markdown Format for Flexible Dashboards. R package version 0.5.2. https://CRAN.R-project.org/package=flexdashboard 
+
+6-Allaire, J. J., Cheng, J., Xie, Y., McPherson, J., Chang, W., Allen, J., ... & Arslan, R. (2020). rmarkdown: Dynamic Documents for R. R package version 2.6. https://CRAN.R-project.org/package=rmarkdown
+
+7-Wickham, H., François, R., Henry, L., & Müller, K. (2021). dplyr: A Grammar of Data Manipulation. R package version 1.0.7. https://CRAN.R-project.org/package=dplyr
+
+8-Wickham, H. (2021). tidyr: Tidy Messy Data. R package version 1.1.3. https://CRAN.R-project.org/package=tidyr
+
+9-Xie, Y. (2021). knitr: A General-Purpose Package for Dynamic Report Generation in R. R package version 1.33. https://yihui.org/knitr/
+
+10-Sievert, C. (2020). Interactive Web-Based Data Visualization with R, plotly, and shiny. Chapman and Hall/CRC. https://plotly-r.com
