@@ -1,11 +1,4 @@
----
-title: "Flexdashboard Experiments"
-output: 
-  flexdashboard::flex_dashboard:
-    orientation: rows
-    vertical_layout: scroll
 
----
 # Information Panel
 
 **Data Set name:** msleep  
